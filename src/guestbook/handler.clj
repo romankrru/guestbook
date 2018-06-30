@@ -6,6 +6,7 @@
             [compojure.handler :as handler]
             [compojure.route :as route]
             [guestbook.routes.home :refer [home-routes]]
+            [guestbook.routes.auth :refer [auth-routes]]
             [guestbook.models.db :as db]))
 
 
@@ -22,6 +23,6 @@
   (route/not-found "Not Found"))
 
 (def app
-  (-> (routes home-routes app-routes)
+  (-> (routes auth-routes home-routes app-routes)
       (handler/site)
       (wrap-base-url)))
