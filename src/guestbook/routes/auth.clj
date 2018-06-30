@@ -3,7 +3,8 @@
             [guestbook.views.layout :as layout]
             [noir.response :refer [redirect]]
             [hiccup.form :refer
-             [form-to label text-field password-field submit-button]]))
+             [form-to label text-field password-field submit-button]]
+            [noir.session :as session]))
 
 (defn control [field name text]
   (list (label name text)
@@ -18,9 +19,20 @@
              (control password-field :pass1 "retype-password")
              (submit-button "create account"))))
 
+(defn login-page []
+  (layout/common
+    (form-to [:post "/login"]
+             (control text-field :id "screen name")
+             (control password-field :pass "Password")
+             (submit-button "create account"))))
+
 (defroutes auth-routes
   (GET "/register" [] (registration-page))
   (POST "/register" [id pass pass1]
     (if (= pass pass1)
       (redirect "/")
-      (registration-page))))
+      (registration-page)))
+  (GET "/login" [] (login-page))
+  (POST "/login" [id pass]
+    (session/put! :user id)
+    (redirect "/")))
