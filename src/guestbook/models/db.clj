@@ -22,7 +22,7 @@
     db
     (sql/with-query-results res
       ["SELECT * FROM guestbook ORDER BY timestamp DESC"]
-      (doal res))))
+      (doall res))))
 
 (defn save-message [name message]
   (sql/with-connection
