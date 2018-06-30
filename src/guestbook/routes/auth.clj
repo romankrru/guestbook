@@ -35,4 +35,11 @@
   (GET "/login" [] (login-page))
   (POST "/login" [id pass]
     (session/put! :user id)
+    (redirect "/"))
+  (GET "/logout" []
+    (layout/common
+      (form-to [:post "/logout"]
+               (submit-button "logout"))))
+  (POST "/logout" []
+    (session/clear!)
     (redirect "/")))
