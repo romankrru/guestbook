@@ -23,3 +23,11 @@
     (sql/with-query-results res
       ["SELECT * FROM guestbook ORDER BY timestamp DESC"]
       (doal res))))
+
+(defn save-message [name message]
+  (sql/with-connection
+    db
+    (sql/insert-values
+      :guestbook
+      [:name :message :timestamp]
+      [name message (new java.util.Date)])))
