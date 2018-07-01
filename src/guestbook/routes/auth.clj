@@ -4,10 +4,15 @@
             [noir.response :refer [redirect]]
             [hiccup.form :refer
              [form-to label text-field password-field submit-button]]
-            [noir.session :as session]))
+            [noir.session :as session]
+            [noir.validation :refer [rule errors? has-value? on-error]]))
+
+(defn format-error [[error]]
+  [:p.error error])
 
 (defn control [field name text]
-  (list (label name text)
+  (list (on-error name format-error)
+        (label name text)
         (field name)
         [:br]))
 
@@ -21,25 +26,30 @@
 
 (defn login-page [& [error]]
   (layout/common
-    (if error
-      [:div.error "Login Error: " error]
-      (form-to [:post "/login"]
+    (form-to [:post "/login"]
              (control text-field :id "screen name")
              (control password-field :pass "Password")
-             (submit-button "create account")))))
+             (submit-button "create account"))))
 
 (defn handle-login [id pass]
-  (cond
-    (empty? id)
-    (login-page "screen name is required")
-    (empty? pass)
-    (login-page "password is required")
-    (and (= "foo" id) (= "bar" pass))
+  (rule (has-value? id)
+    [:id "screen name is required"])
+
+  (rule (= id "foo")
+    [:id "unknown user"])
+
+  (rule (has-value? pass)
+    [:pass "password is required"])
+
+  (rule (= pass "bar")
+    [:pass "password is required"])
+
+  (if (errors? :id :pass)
+    (login-page)
+
     (do
       (session/put! :user id)
-      (redirect "/"))
-    :else
-    (login-page "authentication failed")))
+      (redirect "/"))))
 
 (defroutes auth-routes
   (GET "/register" [] (registration-page))
