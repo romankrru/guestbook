@@ -19,12 +19,27 @@
              (control password-field :pass1 "retype-password")
              (submit-button "create account"))))
 
-(defn login-page []
+(defn login-page [& [error]]
   (layout/common
-    (form-to [:post "/login"]
+    (if error
+      [:div.error "Login Error: " error]
+      (form-to [:post "/login"]
              (control text-field :id "screen name")
              (control password-field :pass "Password")
-             (submit-button "create account"))))
+             (submit-button "create account")))))
+
+(defn handle-login [id pass]
+  (cond
+    (empty? id)
+    (login-page "screen name is required")
+    (empty? pass)
+    (login-page "password is required")
+    (and (= "foo" id) (= "bar" pass))
+    (do
+      (session/put! :user id)
+      (redirect "/"))
+    :else
+    (login-page "authentication failed")))
 
 (defroutes auth-routes
   (GET "/register" [] (registration-page))
@@ -33,9 +48,7 @@
       (redirect "/")
       (registration-page)))
   (GET "/login" [] (login-page))
-  (POST "/login" [id pass]
-    (session/put! :user id)
-    (redirect "/"))
+  (POST "/login" [id pass] (handle-login id pass))
   (GET "/logout" []
     (layout/common
       (form-to [:post "/logout"]
