@@ -51,7 +51,7 @@
       [:pass "password is required"])
 
     (rule (and user (crypt/compare pass (:pass user)))
-      [:pass "password is required"])
+      [:pass "wrong password"])
 
     (if (errors? :id :pass)
       (login-page)
