@@ -5,7 +5,18 @@
             [hiccup.form :refer
              [form-to label text-field password-field submit-button]]
             [noir.session :as session]
-            [noir.validation :refer [rule errors? has-value? on-error]]))
+            [noir.validation :refer [rule errors? has-value? on-error]]
+            [noir.util.crypt :as crypt]
+            [guestbook.models.db :as db]))
+
+(defn handle-registration [id pass pass1]
+  (rule (= pass pass1)
+    [:pass "Password was not retyped correctly"])
+  (if (errors? :pass)
+    (registration-page)
+    (do
+      (db/add-user-record {:id id :pass (crypt/encrypt pass)})
+      (redirect "/login"))))
 
 (defn format-error [[error]]
   [:p.error error])
@@ -29,34 +40,30 @@
     (form-to [:post "/login"]
              (control text-field :id "screen name")
              (control password-field :pass "Password")
-             (submit-button "create account"))))
+             (submit-button "login"))))
 
 (defn handle-login [id pass]
-  (rule (has-value? id)
-    [:id "screen name is required"])
+  (let [user (db/get-user id)]
+    (rule (has-value? id)
+      [:id "screen name is required"])
 
-  (rule (= id "foo")
-    [:id "unknown user"])
+    (rule (has-value? pass)
+      [:pass "password is required"])
 
-  (rule (has-value? pass)
-    [:pass "password is required"])
+    (rule (and user (crypt/compare pass (:pass user)))
+      [:pass "password is required"])
 
-  (rule (= pass "bar")
-    [:pass "password is required"])
+    (if (errors? :id :pass)
+      (login-page)
 
-  (if (errors? :id :pass)
-    (login-page)
-
-    (do
-      (session/put! :user id)
-      (redirect "/"))))
+      (do
+        (session/put! :user id)
+        (redirect "/")))))
 
 (defroutes auth-routes
   (GET "/register" [] (registration-page))
   (POST "/register" [id pass pass1]
-    (if (= pass pass1)
-      (redirect "/")
-      (registration-page)))
+    (handle-registration id pass pass1))
   (GET "/login" [] (login-page))
   (POST "/login" [id pass] (handle-login id pass))
   (GET "/logout" []
